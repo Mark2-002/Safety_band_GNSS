@@ -1,27 +1,18 @@
-
-
+/*safety band GNSS code*/
 #include <stdio.h>
 #include <ncs_version.h>
 #include <zephyr/kernel.h>
-
 #include <zephyr/logging/log.h>
 #include <modem/nrf_modem_lib.h>
 #include <modem/lte_lc.h>
 #include <dk_buttons_and_leds.h>
-
-/* STEP 4 - Include the header file for the GNSS interface */
 #include <nrf_modem_gnss.h>
 
-/* STEP 5 - Define the PVT data frame variable */
+LOG_MODULE_REGISTER(GNSS, LOG_LEVEL_INF);
 static struct nrf_modem_gnss_pvt_data_frame pvt_data;
-
-/* STEP 12.1 - Declare helper variables to find the TTFF */
 static int64_t gnss_start_time;
 static bool first_fix = false;
-
 static K_SEM_DEFINE(lte_connected, 0, 1);
-
-LOG_MODULE_REGISTER(GNSS, LOG_LEVEL_INF);
 
 static int modem_configure(void)
 {
@@ -39,7 +30,6 @@ static int modem_configure(void)
 	return 0;
 }
 
-/* STEP 6 - Define a function to log fix data in a readable format */
 static void print_fix_data(struct nrf_modem_gnss_pvt_data_frame *pvt_data)
 {
 	LOG_INF("Latitude:       %.06f", pvt_data->latitude);
@@ -58,14 +48,11 @@ static void gnss_event_handler(int event)
 
 	switch (event)
 	{
-	/* STEP 7 - On a PVT event, confirm if PVT data is a valid fix */
 	case NRF_MODEM_GNSS_EVT_PVT:
 		LOG_INF("Searching...");
-		/* STEP 15 - Print satellite information */
 		int num_satellites = 0;
-		for (int i = 0; i < 12; i++)
-		// for (int i = 0; i < NRF_MODEM_GNSS_MAX_SATELLITES; i++)
-
+		// for (int i = 0; i < 12; i++)
+		for (int i = 0; i < NRF_MODEM_GNSS_MAX_SATELLITES; i++)
 		{
 			if (pvt_data.sv[i].signal != 0)
 			{
@@ -73,6 +60,7 @@ static void gnss_event_handler(int event)
 				num_satellites++;
 			}
 		}
+
 		LOG_INF("Number of current satellites: %d", num_satellites);
 		err = nrf_modem_gnss_read(&pvt_data, sizeof(pvt_data), NRF_MODEM_GNSS_DATA_PVT);
 		if (err)
@@ -80,9 +68,9 @@ static void gnss_event_handler(int event)
 			LOG_ERR("nrf_modem_gnss_read failed, err %d", err);
 			return;
 		}
+
 		if (pvt_data.flags & NRF_MODEM_GNSS_PVT_FLAG_FIX_VALID)
 		{
-// ---------------------------------------------
 			int satellites_used = 0;
 
 			for (int i = 0; i < NRF_MODEM_GNSS_MAX_SATELLITES; i++)
@@ -104,9 +92,9 @@ static void gnss_event_handler(int event)
 				LOG_INF("3D Fix obtained!");
 				print_fix_data(&pvt_data); // shows latitude, longitude, altitude
 			}
-// -------------------------------------------
+
 			dk_set_led_on(DK_LED1);
-			/* STEP 12.3 - Print the time to first fix */
+			
 			if (!first_fix)
 			{
 				LOG_INF("Time to first fix: %2.1lld s", (k_uptime_get() - gnss_start_time) / 1000);
@@ -115,7 +103,6 @@ static void gnss_event_handler(int event)
 			return;
 		}
 		break;
-	/* STEP 7.2 - Log when the GNSS sleeps and wakes up */
 	case NRF_MODEM_GNSS_EVT_PERIODIC_WAKEUP:
 		LOG_INF("GNSS has woken up");
 		break;
@@ -152,24 +139,19 @@ int main(void)
 	{
 		printk("Failed to set use case error= %d ", err);
 	}
-// ---------------------------------------
 
-	/* STEP 8 - Activate Normal Mode GNSS + BLE + LTE */
+	/*Activate Normal Mode GNSS + BLE + LTE */
 	if (lte_lc_func_mode_set(LTE_LC_FUNC_MODE_NORMAL) != 0)
 	{
 		LOG_ERR("Failed to activate GNSS functional mode");
 		return 0;
 	}
-
-	/* STEP 9 - Register the GNSS event handler */
 	if (nrf_modem_gnss_event_handler_set(gnss_event_handler) != 0)
 	{
 		LOG_ERR("Failed to set GNSS event handler");
 		return 0;
 	}
 
-
-	// -----------------------------------------
 	/* Continious scanning*/
 	if (nrf_modem_gnss_fix_interval_set(1) != 0)
 	{
@@ -183,34 +165,13 @@ int main(void)
 		return 0;
 	}
 	LOG_INF("Starting GNSS Continous scanning");
-	// -----------------------------------------
-
-
-
-
-	/* STEP 10 - Set the GNSS fix interval and GNSS fix retry period */
-	// if (nrf_modem_gnss_fix_interval_set(CONFIG_GNSS_PERIODIC_INTERVAL) != 0)
-	// {
-	// 	LOG_ERR("Failed to set GNSS fix interval");
-	// 	return 0;
-	// }
-
-	// if (nrf_modem_gnss_fix_retry_set(CONFIG_GNSS_PERIODIC_TIMEOUT) != 0)
-	// {
-	// 	LOG_ERR("Failed to set GNSS fix retry");
-	// 	return 0;
-	// }
-	// LOG_INF("Starting GNSS Periodic scanning");
-
 	
-	/* STEP 11 - Start the GNSS receiver*/
+	/* Start the GNSS receiver*/
 	if (nrf_modem_gnss_start() != 0)
 	{
 		LOG_ERR("Failed to start GNSS");
 		return 0;
 	}
-
-	/* STEP 12.2 - Log the current system uptime */
 	gnss_start_time = k_uptime_get();
 
 	return 0;
