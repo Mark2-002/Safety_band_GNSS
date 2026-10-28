@@ -1,6 +1,6 @@
 sample:
-  description: Cellular IoT Fundamentals Course by Nordic Developer Academy (https://academy.nordicsemi.com/)
-  name: Cellular IoT Fundamentals Course - Lesson 6 Exercise 1 Solution
+  description: Safety band GNSS
+  name: Safety band GNSS
   
 common: 
     sysbuild: true
