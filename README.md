@@ -76,6 +76,3 @@ The GNSS timing can be adjusted in `Kconfig`:
 - GPS fix detection depends on satellite visibility and RF conditions.
 - LED behavior is used as a simple status indicator when a fix is achieved.
 
-## License
-
-This project does not currently include a license file. If you plan to publish or distribute it, add an appropriate open-source license before release.
